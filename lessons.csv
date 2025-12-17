@@ -1,0 +1,8 @@
+course_id,title,content_url,order_index
+1,Introduction to React,https://videos.example.com/react-intro,1
+1,JSX and Components,https://videos.example.com/react-jsx,2
+1,State and Props,https://videos.example.com/react-state-props,3
+2,Node.js Overview,https://videos.example.com/node-intro,1
+2,Express Basics,https://videos.example.com/express-basics,2
+3,Machine Learning Introduction,https://videos.example.com/ml-intro,1
+3,TensorFlow Setup,https://videos.example.com/tensorflow-setup,2
