@@ -50,7 +50,7 @@ app.use(
         ],
 
         imgSrc: ["'self'", "data:", "https://cdn-icons-png.flaticon.com", "https://res.cloudinary.com"],
-        connectSrc: ["'self'"],
+        connectSrc: ["'self'","https://cdn.jsdelivr.net"],
         objectSrc: ["'none'"],
         upgradeInsecureRequests: [],
       },

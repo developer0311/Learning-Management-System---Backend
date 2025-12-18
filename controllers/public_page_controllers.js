@@ -2,5 +2,5 @@
 
 
 export async function homepage_data(req, res) {
-    res.json({"name": "Diprati Das"})
+    res.render("homepage")
 }

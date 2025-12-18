@@ -1,0 +1,194 @@
+<section id="progress" class="doc-section anchor">
+
+    <h1 class="text-center mb-4">📊 Progress Routes (API)</h1>
+
+    <p><strong>Base URL</strong></p>
+    <pre><code class="language-http">https://your-domain.com/api</code></pre>
+
+    <p>All progress-related APIs require <b>student authentication</b>.</p>
+
+    <blockquote class="border-start border-success ps-3 my-3">
+        ✅ Only <b>enrolled students</b> can track and update their course progress.
+    </blockquote>
+
+    <hr>
+
+    <h2>🔐 Authentication Requirement</h2>
+
+    <p>Before using progress APIs:</p>
+    <ul>
+        <li>Login as a <b>Student</b></li>
+        <li>Include the JWT token in the <code>Authorization</code> header</li>
+    </ul>
+
+    <pre><code class="language-http">Authorization: Bearer &lt;STUDENT_JWT_TOKEN&gt;</code></pre>
+
+    <hr class="mb-5" id="complete-lesson">
+
+    <h2>✅ Complete Lesson</h2>
+
+    <p>Mark a specific lesson as completed by the logged-in student.</p>
+
+    <h5>Endpoint</h5>
+    <pre><code class="language-swift">POST /lessons/:lessonId/complete</code></pre>
+    <br>
+    <br>
+
+    <h5>Headers</h5>
+    <pre><code class="language-http">Authorization: Bearer STUDENT_JWT_TOKEN
+Content-Type: application/json</code></pre>
+    <br>
+    <br>
+
+    <h5>URL Parameters</h5>
+
+    <div class="table-responsive mb-3">
+        <table class="table table-bordered table-striped align-middle">
+            <thead class="table-light">
+                <tr>
+                    <th>Param</th>
+                    <th>Description</th>
+                </tr>
+            </thead>
+            <tbody>
+                <tr>
+                    <td><code>lessonId</code></td>
+                    <td>ID of the lesson</td>
+                </tr>
+            </tbody>
+        </table>
+    </div>
+
+    <h5>Request Body</h5>
+    <p>🚫 No body required</p>
+    <br>
+    <br>
+
+    <h5>Success Response (200)</h5>
+    <pre><code class="language-json">{
+  "success": true,
+  "message": "Lesson marked as completed"
+}</code></pre>
+    <br>
+    <br>
+
+    <hr class="mb-5" id="course-progress">
+
+    <h2>📈 Get Course Progress</h2>
+
+    <p>Retrieve the course completion percentage for the logged-in student.</p>
+
+    <h5>Endpoint</h5>
+    <pre><code class="language-swift">GET /courses/:courseId/progress</code></pre>
+    <br>
+
+    <h5>Headers</h5>
+    <pre><code class="language-http">Authorization: Bearer STUDENT_JWT_TOKEN</code></pre>
+    <br>
+
+    <h5>URL Parameters</h5>
+
+    <div class="table-responsive mb-3">
+        <table class="table table-bordered table-striped align-middle">
+            <thead class="table-light">
+                <tr>
+                    <th>Param</th>
+                    <th>Description</th>
+                </tr>
+            </thead>
+            <tbody>
+                <tr>
+                    <td><code>courseId</code></td>
+                    <td>ID of the course</td>
+                </tr>
+            </tbody>
+        </table>
+    </div>
+
+    <h5>Success Response (200)</h5>
+    <pre><code class="language-json">{
+  "success": true,
+  "progress": {
+    "completed_lessons": 8,
+    "total_lessons": 12,
+    "completion_percentage": 66.67
+  }
+}</code></pre>
+    <br>
+
+    <hr>
+
+    <h2>⚠️ Common Error Responses</h2>
+
+    <div class="table-responsive mb-3">
+        <table class="table table-bordered table-striped align-middle">
+            <thead class="table-light">
+                <tr>
+                    <th>Status Code</th>
+                    <th>Error Message</th>
+                    <th>Reason</th>
+                </tr>
+            </thead>
+            <tbody>
+                <tr>
+                    <td>401</td>
+                    <td>Unauthorized</td>
+                    <td>Missing or invalid JWT</td>
+                </tr>
+                <tr>
+                    <td>403</td>
+                    <td>Access denied</td>
+                    <td>Student not enrolled in course</td>
+                </tr>
+                <tr>
+                    <td>404</td>
+                    <td>Lesson / Course not found</td>
+                    <td>Invalid ID</td>
+                </tr>
+                <tr>
+                    <td>409</td>
+                    <td>Already completed</td>
+                    <td>Lesson already marked completed</td>
+                </tr>
+            </tbody>
+        </table>
+    </div>
+
+    <hr>
+
+    <h2>🔒 Authorization Rules</h2>
+
+    <div class="table-responsive mb-3">
+        <table class="table table-bordered table-striped align-middle">
+            <thead class="table-light">
+                <tr>
+                    <th>Action</th>
+                    <th>Allowed Role</th>
+                </tr>
+            </thead>
+            <tbody>
+                <tr>
+                    <td>Complete lesson</td>
+                    <td>Enrolled Student</td>
+                </tr>
+                <tr>
+                    <td>View course progress</td>
+                    <td>Enrolled Student</td>
+                </tr>
+            </tbody>
+        </table>
+    </div>
+
+    <hr>
+
+    <h2>✅ Notes for API Consumers</h2>
+
+    <ul>
+        <li>A lesson can be marked <b>completed only once per student</b></li>
+        <li>Repeating the complete request should return <b>409 Conflict</b></li>
+        <li>Progress is calculated dynamically using completed lessons</li>
+        <li>Ensure the student is <b>enrolled</b> before calling these APIs</li>
+        <li>Use this API to get course completion percentage for a student</li>
+    </ul>
+
+</section>

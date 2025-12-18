@@ -1,0 +1,168 @@
+<section id="enrollment" class="doc-section anchor">
+
+    <h1 class="text-center mb-4">🎓 Enrollment Routes (API)</h1>
+
+    <p><strong>Base URL</strong></p>
+    <pre><code class="language-http">https://your-domain.com/api</code></pre>
+    <br>
+
+    <p>All enrollment-related APIs require <b>student authentication</b>.</p>
+
+    <hr>
+
+    <h2>🔐 Authentication Requirement</h2>
+
+    <p>Before using enrollment APIs:</p>
+    <ul>
+        <li>Login as a <b>Student</b></li>
+        <li>Include the JWT token in the <code>Authorization</code> header</li>
+    </ul>
+
+    <pre><code class="language-http">Authorization: Bearer &lt;STUDENT_JWT_TOKEN&gt;</code></pre>
+    <br>
+
+    <hr class="mb-5" id="enroll-course">
+
+    <h2>📝 Enroll in a Course</h2>
+
+    <p>Enroll the logged-in student into a specific course.</p>
+
+    <h5>Endpoint</h5>
+    <pre><code class="language-swift">POST /courses/:courseId/enroll</code></pre>
+    <br>
+
+    <h5>Headers</h5>
+    <pre><code class="language-http">Authorization: Bearer STUDENT_JWT_TOKEN
+Content-Type: application/json</code></pre>
+    <br>
+
+    <h5>URL Parameters</h5>
+
+    <div class="table-responsive mb-3">
+        <table class="table table-bordered table-striped align-middle">
+            <thead class="table-light">
+                <tr>
+                    <th>Param</th>
+                    <th>Description</th>
+                </tr>
+            </thead>
+            <tbody>
+                <tr>
+                    <td><code>courseId</code></td>
+                    <td>ID of the course</td>
+                </tr>
+            </tbody>
+        </table>
+    </div>
+
+    <h5>Request Body</h5>
+    <p>🚫 No body required</p>
+    <br>
+
+    <h5>Success Response (200)</h5>
+    <pre><code class="language-json">{
+  "success": true,
+  "message": "Enrolled successfully"
+}</code></pre>
+    <br>
+
+    <h5>Error Responses</h5>
+
+    <div class="table-responsive mb-3">
+        <table class="table table-bordered table-striped align-middle">
+            <thead class="table-light">
+                <tr>
+                    <th>Status Code</th>
+                    <th>Message</th>
+                    <th>Reason</th>
+                </tr>
+            </thead>
+            <tbody>
+                <tr>
+                    <td>401</td>
+                    <td>Unauthorized</td>
+                    <td>Missing or invalid JWT</td>
+                </tr>
+                <tr>
+                    <td>404</td>
+                    <td>Course not found</td>
+                    <td>Invalid course ID</td>
+                </tr>
+                <tr>
+                    <td>409</td>
+                    <td>Already enrolled</td>
+                    <td>Student already enrolled</td>
+                </tr>
+            </tbody>
+        </table>
+    </div>
+
+    <hr class="mb-5" id="my-courses">
+
+    <h2>📚 Get My Courses</h2>
+
+    <p>Fetch all courses the logged-in student is enrolled in.</p>
+
+    <h5>Endpoint</h5>
+    <pre><code class="language-swift">GET /my-courses</code></pre>
+    <br>
+
+    <h5>Headers</h5>
+    <pre><code class="language-http">Authorization: Bearer STUDENT_JWT_TOKEN</code></pre>
+    <br>
+
+    <h5>Request Body</h5>
+    <p>🚫 No body required</p>
+    <br>
+
+    <h5>Success Response (200)</h5>
+    <pre><code class="language-json">{
+  "success": true,
+  "courses": [
+    {
+      "id": 1,
+      "title": "React for Beginners",
+      "category": "Frontend",
+      "level": "Beginner",
+      "progress": 45
+    }
+  ]
+}</code></pre>
+    <br>
+
+    <hr>
+
+    <h2>🔒 Authorization Rules</h2>
+
+    <div class="table-responsive mb-3">
+        <table class="table table-bordered table-striped align-middle">
+            <thead class="table-light">
+                <tr>
+                    <th>Action</th>
+                    <th>Allowed Role</th>
+                </tr>
+            </thead>
+            <tbody>
+                <tr>
+                    <td>Enroll in course</td>
+                    <td>Student</td>
+                </tr>
+                <tr>
+                    <td>View enrolled courses</td>
+                    <td>Student</td>
+                </tr>
+            </tbody>
+        </table>
+    </div>
+
+    <hr>
+
+    <h2>✅ Notes for API Consumers</h2>
+
+    <ul>
+        <li>Enrollment is <b>idempotent</b> — enrolling twice returns <b>409 Conflict</b></li>
+        <li>Progress can be fetched using the <b>Course Progress API</b></li>
+        <li>Ensure the student is logged in before calling enrollment APIs</li>
+    </ul>
+
+</section>

@@ -1,0 +1,95 @@
+<section id="about" class="doc-section anchor">
+
+    <h1 class="text-center mb-4">📖 About This Documentation</h1>
+
+    <p class="mt-3">
+        This documentation provides a complete and structured reference for the
+        <b>Learning Management System (LMS) REST API</b>.
+        It is designed to help developers easily understand, integrate, and consume
+        the API for building web or mobile applications.
+    </p>
+
+    <hr class="my-4">
+
+    <h2 class="mb-3">🎯 Purpose</h2>
+
+    <p>
+    <blockquote class="border-start border-info ps-3 my-3">
+        The goal of this documentation is to clearly explain how different parts of the LMS
+        backend work together, including authentication, course management, lesson handling,
+        student progress tracking, and enrollment workflows.
+    </blockquote>
+    </p>
+
+    <p>
+        Each API endpoint is documented with:
+    </p>
+
+    <ul>
+        <li>Clear endpoint definitions and HTTP methods</li>
+        <li>Required headers and authentication rules</li>
+        <li>Request and response examples in JSON format</li>
+        <li>Error responses with appropriate HTTP status codes</li>
+        <li>Authorization rules based on user roles</li>
+    </ul>
+
+    <hr class="my-4">
+
+    <h2 class="mb-3">🧩 API Modules Covered</h2>
+
+    <ul>
+        <li><b>Authentication</b> – User registration, login, and JWT-based security</li>
+        <li><b>Courses</b> – Course creation, updates, retrieval, and deletion</li>
+        <li><b>Lessons</b> – Lesson management within courses</li>
+        <li><b>Progress</b> – Student lesson completion and course progress tracking</li>
+        <li><b>Enrollment</b> – Course enrollment and enrolled course retrieval</li>
+    </ul>
+
+    <hr class="my-4">
+
+    <h2 class="mb-3">🔐 Authentication & Security</h2>
+
+    <p>
+        The API uses <b>JWT (JSON Web Token)</b>–based authentication.
+        Access to protected routes depends on the authenticated user’s role:
+    </p>
+
+    <ul>
+        <li><b>Student</b> – Enrollment and progress tracking</li>
+        <li><b>Instructor</b> – Course and lesson management (own courses)</li>
+        <li><b>Admin</b> – Full access across all modules</li>
+    </ul>
+
+    <p>
+    <blockquote class="border-start border-info ps-3 my-3">
+        All protected requests must include a valid JWT token in the
+        <code>Authorization</code> header.
+    </blockquote>
+    </p>
+
+    <hr class="my-4">
+
+    <h2 class="mb-3">🛠️ Intended Audience</h2>
+
+    <p>
+        This documentation is intended for:
+    </p>
+
+    <ul>
+        <li>Frontend developers integrating LMS APIs</li>
+        <li>Backend developers maintaining or extending the system</li>
+        <li>Students or learners exploring API-driven applications</li>
+    </ul>
+
+    <hr class="my-4">
+
+    <h2>📌 Usage Notes</h2>
+
+    <ul>
+        <li>All request and response examples use <b>JSON</b></li>
+        <li>Ensure correct authentication before calling protected endpoints</li>
+        <li>Handle error responses gracefully in frontend applications</li>
+        <li>Follow HTTP status codes for better debugging and UX</li>
+    </ul>
+
+</section>

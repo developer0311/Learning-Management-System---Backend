@@ -1,0 +1,290 @@
+<section id="lessons" class="doc-section anchor">
+
+    <h1 class="text-center mb-4">📘 Lesson Routes (API)</h1>
+
+    <p><strong>Base URL</strong></p>
+    <pre><code class="language-http">https://your-domain.com/api</code></pre>
+    <br>
+
+    <p>All lesson-related APIs require <b>authentication</b>.</p>
+
+    <blockquote class="border-start border-warning ps-3 my-3">
+        ⚠️ Only the <b>instructor who created the course</b> or an <b>admin</b> can perform lesson CRUD operations.
+    </blockquote>
+
+    <hr class="my-4">
+
+    <h2>🔐 Authentication Requirement</h2>
+
+    <p>Before using lesson APIs:</p>
+    <ul>
+        <li>Login as an <b>Instructor</b> (course owner) or <b>Admin</b></li>
+        <li>Use the received <b>JWT token</b> in the <code>Authorization</code> header</li>
+    </ul>
+
+    <pre><code class="language-http">Authorization: Bearer &lt;TOKEN&gt;</code></pre>
+    <br>
+
+    <hr class="mb-5" id="add-lesson">
+
+    <h2>➕ Add Lesson to a Course</h2>
+
+    <p>Create a new lesson under a specific course.</p>
+
+    <h5>Endpoint</h5>
+    <pre><code class="language-swift">POST /lessons/courses/:courseId</code></pre>
+    <br>
+
+    <h5>Headers</h5>
+    <pre><code class="language-http">Authorization: Bearer INSTRUCTOR_TOKEN
+Content-Type: application/json</code></pre>
+    <br>
+
+    <h5>URL Parameters</h5>
+
+    <div class="table-responsive mb-3">
+        <table class="table table-bordered table-striped align-middle">
+            <thead class="table-light">
+                <tr>
+                    <th>Param</th>
+                    <th>Description</th>
+                </tr>
+            </thead>
+            <tbody>
+                <tr>
+                    <td><code>courseId</code></td>
+                    <td>ID of the course</td>
+                </tr>
+            </tbody>
+        </table>
+    </div>
+
+    <h5>Example</h5>
+    <p>
+    <blockquote class="border-start border-warning ps-3 my-3">
+        <b>Course:</b> React for Beginners<br>
+        <b>Course ID:</b> <code>1</code>
+    </blockquote>
+    </p>
+
+    <pre><code class="language-swift">POST /lessons/courses/1</code></pre>
+    <br>
+
+    <h5>Request Body</h5>
+    <pre><code class="language-json">{
+  "title": "React Project Setup",
+  "content_url": "https://videos.example.com/react-project-setup",
+  "order_index": 4
+}</code></pre>
+    <br>
+
+    <h5>Request Fields</h5>
+
+    <div class="table-responsive mb-3">
+        <table class="table table-bordered table-striped table-hover align-middle">
+            <thead class="table-light">
+                <tr>
+                    <th>Field</th>
+                    <th>Type</th>
+                    <th>Required</th>
+                    <th>Description</th>
+                </tr>
+            </thead>
+            <tbody>
+                <tr>
+                    <td><code>title</code></td>
+                    <td>string</td>
+                    <td>✅</td>
+                    <td>Lesson title</td>
+                </tr>
+                <tr>
+                    <td><code>content_url</code></td>
+                    <td>string</td>
+                    <td>✅</td>
+                    <td>Video or content URL</td>
+                </tr>
+                <tr>
+                    <td><code>order_index</code></td>
+                    <td>number</td>
+                    <td>✅</td>
+                    <td>Lesson sequence number</td>
+                </tr>
+            </tbody>
+        </table>
+    </div>
+    <br>
+
+    <h5>Success Response (201)</h5>
+    <pre><code class="language-json">{
+  "success": true,
+  "message": "Lesson added successfully"
+}</code></pre>
+    <br>
+
+    <hr class="mb-5" id="update-lesson">
+
+    <h2>✏️ Update Lesson</h2>
+
+    <p>Update lesson details (Instructor/Admin only).</p>
+
+    <h5>Endpoint</h5>
+    <pre><code class="language-swift">PUT /lessons/:lessonId</code></pre>
+    <br>
+
+    <h5>Headers</h5>
+    <pre><code class="language-http">Authorization: Bearer INSTRUCTOR_OR_ADMIN_TOKEN
+Content-Type: application/json</code></pre>
+    <br>
+
+    <h5>URL Parameters</h5>
+
+    <div class="table-responsive mb-3">
+        <table class="table table-bordered table-striped align-middle">
+            <thead class="table-light">
+                <tr>
+                    <th>Param</th>
+                    <th>Description</th>
+                </tr>
+            </thead>
+            <tbody>
+                <tr>
+                    <td><code>lessonId</code></td>
+                    <td>ID of the lesson</td>
+                </tr>
+            </tbody>
+        </table>
+    </div>
+
+    <h5>Request Body (Partial Allowed)</h5>
+    <pre><code class="language-json">{
+  "title": "Updated JSX & Components",
+  "content_url": "https://videos.example.com/jsx-updated"
+}</code></pre>
+    <br>
+
+    <h5>Success Response (200)</h5>
+    <pre><code class="language-json">{
+  "success": true,
+  "message": "Lesson updated successfully"
+}</code></pre>
+    <br>
+
+    <hr class="mb-5" id="delete-lesson">
+
+    <h2>🗑️ Delete Lesson</h2>
+
+    <p>Delete a lesson permanently (Instructor/Admin only).</p>
+
+    <h5>Endpoint</h5>
+    <pre><code class="language-swift">DELETE /lessons/:lessonId</code></pre>
+    <br>
+
+    <h5>Headers</h5>
+    <pre><code class="language-http">Authorization: Bearer ADMIN_OR_INSTRUCTOR_TOKEN</code></pre>
+    <br>
+
+    <h5>URL Parameters</h5>
+
+    <div class="table-responsive mb-3">
+        <table class="table table-bordered table-striped align-middle">
+            <thead class="table-light">
+                <tr>
+                    <th>Param</th>
+                    <th>Description</th>
+                </tr>
+            </thead>
+            <tbody>
+                <tr>
+                    <td><code>lessonId</code></td>
+                    <td>ID of the lesson</td>
+                </tr>
+            </tbody>
+        </table>
+    </div>
+
+    <h5>Success Response (200)</h5>
+    <pre><code class="language-json">{
+  "success": true,
+  "message": "Lesson deleted successfully"
+}</code></pre>
+    <br>
+
+    <hr>
+
+    <h2>⚠️ Common Error Responses</h2>
+
+    <div class="table-responsive mb-3">
+        <table class="table table-bordered table-striped align-middle">
+            <thead class="table-light">
+                <tr>
+                    <th>Status Code</th>
+                    <th>Error Message</th>
+                    <th>Reason</th>
+                </tr>
+            </thead>
+            <tbody>
+                <tr>
+                    <td>401</td>
+                    <td>Unauthorized</td>
+                    <td>Missing or invalid JWT</td>
+                </tr>
+                <tr>
+                    <td>403</td>
+                    <td>Not allowed</td>
+                    <td>Instructor does not own the course</td>
+                </tr>
+                <tr>
+                    <td>404</td>
+                    <td>Course / Lesson not found</td>
+                    <td>Invalid ID</td>
+                </tr>
+                <tr>
+                    <td>409</td>
+                    <td>Duplicate order_index</td>
+                    <td>Lesson order already exists</td>
+                </tr>
+            </tbody>
+        </table>
+    </div>
+
+    <hr>
+
+    <h2>🔒 Authorization Rules</h2>
+
+    <div class="table-responsive mb-3">
+        <table class="table table-bordered table-striped align-middle">
+            <thead class="table-light">
+                <tr>
+                    <th>Action</th>
+                    <th>Allowed Roles</th>
+                </tr>
+            </thead>
+            <tbody>
+                <tr>
+                    <td>Add lesson</td>
+                    <td>Course Instructor, Admin</td>
+                </tr>
+                <tr>
+                    <td>Update lesson</td>
+                    <td>Course Instructor, Admin</td>
+                </tr>
+                <tr>
+                    <td>Delete lesson</td>
+                    <td>Course Instructor, Admin</td>
+                </tr>
+            </tbody>
+        </table>
+    </div>
+
+    <hr>
+
+    <h2>✅ Notes for API Consumers</h2>
+
+    <ul>
+        <li>Lesson order (<code>order_index</code>) must be <b>unique within a course</b></li>
+        <li>Use <b>PUT</b> for partial updates</li>
+        <li>Handle <b>409 conflicts</b> gracefully in frontend</li>
+        <li>Ensure course ownership before lesson operations</li>
+    </ul>
+
+</section>

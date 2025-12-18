@@ -1,0 +1,170 @@
+<section id="auth" class="doc-section anchor">
+    <h1 class="text-center mb-4">🔐 Authentication API</h1>
+
+    <p><strong>Base URL</strong></p>
+    <pre><code class="language-http">https://your-domain.com</code></pre>
+    <br>
+    <p>All authentication APIs accept and return <b>JSON</b>.</p>
+
+
+    <hr class="mb-5" id="register">
+
+    <h2>📝 User Registration</h2>
+    <p>Create a new user account.</p>
+
+    <h5>Endpoint</h5>
+
+    <pre><code class="language-swift">POST /auth/register</code></pre>
+    <br>
+
+    <h5>Headers</h5>
+
+    <pre><code class="language-http">Content-Type: application/json</code></pre>
+    <br>
+
+    <h5>Request Body</h5>
+
+    <pre><code class="language-json">{
+  "name": "John Doe",
+  "email": "john.doe@example.com",
+  "password": "StrongPassword123",
+  "role": "student"
+}</code></pre>
+
+    <br>
+
+    <h5>Request Fields</h5>
+
+    <div class="table-responsive mb-3">
+        <table class="table table-bordered table-striped table-hover text">
+            <thead class="table-light">
+                <tr>
+                    <th>Field</th>
+                    <th>Type</th>
+                    <th>Required</th>
+                    <th>Description</th>
+                </tr>
+            </thead>
+            <tbody>
+                <tr>
+                    <td><code>name</code></td>
+                    <td>string</td>
+                    <td>✅</td>
+                    <td>Full name of the user</td>
+                </tr>
+                <tr>
+                    <td><code>email</code></td>
+                    <td>string</td>
+                    <td>✅</td>
+                    <td>Unique email address</td>
+                </tr>
+                <tr>
+                    <td><code>password</code></td>
+                    <td>string</td>
+                    <td>✅</td>
+                    <td>User password</td>
+                </tr>
+                <tr>
+                    <td><code>role</code></td>
+                    <td>string</td>
+                    <td>✅</td>
+                    <td>User role (student, instructor, admin, etc.)</td>
+                </tr>
+            </tbody>
+        </table>
+    </div>
+
+    <br>
+
+    <h5>Success Response (201)</h5>
+
+    <pre><code class="language-json">{
+  "success": true,
+  "message": "User registered successfully"
+}</code></pre>
+
+    <br>
+    <h5>Error Responses</h5>
+    <pre><code class="language-json">{
+  "success": false,
+  "message": "Email already exists"
+}</code></pre>
+
+    <hr class="mb-5" id="login">
+
+    <h2>🔑 User Login</h2>
+
+    <p>Authenticate an existing user and return an access token.</p>
+    <h5>Endpoint</h5>
+    <pre><code class="language-swift">POST /auth/login</code></pre>
+    <br>
+
+    <h5>Headers</h5>
+    <pre><code class="language-http">Content-Type: application/json</code></pre>
+    <br>
+
+    <h5>Request Body</h5>
+    <pre><code class="language-json">{
+  "email": "john.doe@example.com",
+  "password": "StrongPassword123"
+}</code></pre>
+
+    <br>
+
+    <h5>Request Fields</h5>
+
+    <div class="table-responsive mb-3">
+        <table class="table table-bordered table-striped align-middle">
+            <thead class="table-dark">
+                <tr>
+                    <th>Field</th>
+                    <th>Type</th>
+                    <th>Required</th>
+                    <th>Description</th>
+                </tr>
+            </thead>
+            <tbody>
+                <tr>
+                    <td><code>email</code></td>
+                    <td>string</td>
+                    <td>✅</td>
+                    <td>Registered email address</td>
+                </tr>
+                <tr>
+                    <td><code>password</code></td>
+                    <td>string</td>
+                    <td>✅</td>
+                    <td>User password</td>
+                </tr>
+            </tbody>
+        </table>
+    </div>
+    <br>
+
+    <h5>Success Response (200)</h5>
+    <pre><code class="language-json">{
+  "success": true,
+  "message": "Login successful",
+  "token": "jwt-access-token"
+}</code></pre>
+
+    <br>
+    <h5>Error Responses</h5>
+    <pre><code class="language-json">{
+  "success": false,
+  "message": "Invalid email or password"
+}</code></pre>
+    <br>
+
+    <hr>
+
+    <h2>🔒 Authentication Notes for API Consumers</h2>
+
+    <ul>
+        <li>Passwords are securely <b>hashed</b> on the server.</li>
+        <li>The returned <b>JWT token</b> should be sent in the `Authorization` header for protected routes.</li>
+    </ul>
+
+    <pre><code class="language-http">Authorization: Bearer &lttoken></code></pre>
+
+</section>

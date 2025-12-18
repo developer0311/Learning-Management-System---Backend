@@ -1,0 +1,300 @@
+<section id="courses" class="doc-section anchor">
+
+    <h1 class="text-center mb-4">📚 Course Routes (API)</h1>
+
+    <p>All course-related APIs use <b>JSON</b> and most require <b>authentication</b>.</p>
+    <p><strong>Base URL</strong></p>
+    <pre><code class="language-http">https://your-domain.com/api</code></pre>
+    <br>
+
+    <hr>
+
+    <h2>🔐 Instructor / Admin Login (Prerequisite)</h2>
+
+    <p>Only <b>instructors or admins</b> can create, update, or delete courses.</p>
+
+    <h5>Endpoint</h5>
+    <pre><code class="language-swift">POST /auth/login</code></pre>
+    <br>
+
+    <h5>Headers</h5>
+    <pre><code class="language-http">Content-Type: application/json</code></pre>
+    <br>
+
+    <h5>Request Body</h5>
+    <pre><code class="language-json">{
+  "email": "rahul.instructor@example.com",
+  "password": "password123"
+}</code></pre>
+    <br>
+
+    <h5>Success Response (200)</h5>
+    <pre><code class="language-json">{
+  "token": "INSTRUCTOR_1_TOKEN"
+}</code></pre>
+    <br>
+
+    <p class="mt-2">
+        ➡️ Use this token in the <code>Authorization</code> header for protected course routes.
+    </p>
+
+    <hr class="mb-5" id="add-courses">
+
+    <h2>➕ Add New Course</h2>
+
+    <p>Create a new course (Instructor/Admin only).</p>
+
+    <h5>Endpoint</h5>
+    <pre><code class="language-swift">POST /courses</code></pre>
+    <br>
+
+    <h5>Headers</h5>
+    <pre><code class="language-http">Authorization: Bearer INSTRUCTOR_1_TOKEN
+Content-Type: application/json</code></pre>
+    <br>
+
+    <h5>Request Body</h5>
+    <pre><code class="language-json">{
+  "title": "React for Beginners",
+  "description": "Learn the fundamentals of React.js and build interactive UIs from scratch.",
+  "category": "Frontend",
+  "level": "Beginner",
+  "duration": "6 weeks",
+  "price": 4999,
+  "discount_percent": 20,
+  "banner_url": "/images/react-course.jpg"
+}</code></pre>
+    <br>
+
+    <h5>Request Fields</h5>
+
+    <div class="table-responsive mb-3">
+        <table class="table table-bordered table-striped table-hover align-middle">
+            <thead class="table-light">
+                <tr>
+                    <th>Field</th>
+                    <th>Type</th>
+                    <th>Required</th>
+                    <th>Description</th>
+                </tr>
+            </thead>
+            <tbody>
+                <tr>
+                    <td><code>title</code></td>
+                    <td>string</td>
+                    <td>✅</td>
+                    <td>Course title</td>
+                </tr>
+                <tr>
+                    <td><code>description</code></td>
+                    <td>string</td>
+                    <td>✅</td>
+                    <td>Course overview</td>
+                </tr>
+                <tr>
+                    <td><code>category</code></td>
+                    <td>string</td>
+                    <td>✅</td>
+                    <td>Course category</td>
+                </tr>
+                <tr>
+                    <td><code>level</code></td>
+                    <td>string</td>
+                    <td>✅</td>
+                    <td>Beginner / Intermediate / Advanced</td>
+                </tr>
+                <tr>
+                    <td><code>duration</code></td>
+                    <td>string</td>
+                    <td>✅</td>
+                    <td>Course duration</td>
+                </tr>
+                <tr>
+                    <td><code>price</code></td>
+                    <td>number</td>
+                    <td>✅</td>
+                    <td>Original course price</td>
+                </tr>
+                <tr>
+                    <td><code>discount_percent</code></td>
+                    <td>number</td>
+                    <td>❌</td>
+                    <td>Discount percentage</td>
+                </tr>
+                <tr>
+                    <td><code>banner_url</code></td>
+                    <td>string</td>
+                    <td>❌</td>
+                    <td>Course banner image</td>
+                </tr>
+            </tbody>
+        </table>
+    </div>
+    <br>
+
+    <h5>Success Response (201)</h5>
+    <pre><code class="language-json">{
+  "success": true,
+  "message": "Course created successfully"
+}</code></pre>
+    <br>
+
+    <hr class="mb-5" id="all-courses">
+
+    <h2>📖 View All Courses</h2>
+
+    <p>Fetch a list of all available courses.</p>
+
+    <h5>Endpoint</h5>
+    <pre><code class="language-swift">GET /courses</code></pre>
+    <br>
+
+    <h5>Authentication</h5>
+    <p>❌ Not required (Public API)</p>
+    <br>
+
+    <h5>Success Response (200)</h5>
+    <pre><code class="language-json">{
+  "success": true,
+  "courses": []
+}</code></pre>
+    <br>
+
+    <hr class="mb-5" id="course-id">
+
+    <h2>🔍 View Course by ID</h2>
+
+    <p>Fetch detailed information for a specific course.</p>
+
+    <h5>Endpoint</h5>
+    <pre><code class="language-swift">GET /courses/:courseId</code></pre>
+    <br>
+
+    <h5>URL Params</h5>
+
+    <div class="table-responsive mb-3">
+        <table class="table table-bordered table-striped align-middle">
+            <thead class="table-light">
+                <tr>
+                    <th>Param</th>
+                    <th>Description</th>
+                </tr>
+            </thead>
+            <tbody>
+                <tr>
+                    <td><code>courseId</code></td>
+                    <td>Unique ID of the course</td>
+                </tr>
+            </tbody>
+        </table>
+    </div>
+    <br>
+
+    <h5>Authentication</h5>
+    <p>❌ Not required</p>
+    <br>
+
+    <h5>Error Response (404)</h5>
+    <pre><code class="language-json">{
+  "success": false,
+  "message": "Course not found"
+}</code></pre>
+    <br>
+
+    <hr class="mb-5" id="update-course">
+
+    <h2>✏️ Update Course</h2>
+
+    <p>Update existing course details (Instructor/Admin only).</p>
+
+    <h5>Endpoint</h5>
+    <pre><code class="language-swift">PUT /courses/:courseId</code></pre>
+    <br>
+
+    <h5>Headers</h5>
+    <pre><code class="language-http">Authorization: Bearer INSTRUCTOR_OR_ADMIN_TOKEN
+Content-Type: application/json</code></pre>
+    <br>
+
+    <h5>Request Body (Partial Allowed)</h5>
+    <pre><code class="language-json">{
+  "title": "React for Beginners (Updated)",
+  "price": 4599,
+  "discount_percent": 25,
+  "banner_url": "/images/react-course-new.jpg"
+}</code></pre>
+    <br>
+
+    <h5>Success Response (200)</h5>
+    <pre><code class="language-json">{
+  "success": true,
+  "message": "Course updated successfully"
+}</code></pre>
+    <br>
+
+    <hr class="mb-5" id="delete-course">
+
+    <h2>🗑️ Delete Course</h2>
+
+    <p>Delete a course permanently (Instructor/Admin only).</p>
+
+    <h5>Endpoint</h5>
+    <pre><code class="language-swift">DELETE /courses/:courseId</code></pre>
+    <br>
+
+    <h5>Headers</h5>
+    <pre><code class="language-http">Authorization: Bearer INSTRUCTOR_OR_ADMIN_TOKEN</code></pre>
+    <br>
+
+    <h5>Success Response (200)</h5>
+    <pre><code class="language-json">{
+  "success": true,
+  "message": "Course deleted successfully"
+}</code></pre>
+    <br>
+
+    <hr>
+
+    <h2>🔒 Authorization Rules</h2>
+
+    <div class="table-responsive mb-3">
+        <table class="table table-bordered table-striped align-middle">
+            <thead class="table-light">
+                <tr>
+                    <th>Action</th>
+                    <th>Allowed Roles</th>
+                </tr>
+            </thead>
+            <tbody>
+                <tr>
+                    <td>View courses</td>
+                    <td>Public</td>
+                </tr>
+                <tr>
+                    <td>Add course</td>
+                    <td>Instructor, Admin</td>
+                </tr>
+                <tr>
+                    <td>Update course</td>
+                    <td>Instructor (own), Admin</td>
+                </tr>
+                <tr>
+                    <td>Delete course</td>
+                    <td>Instructor (own), Admin</td>
+                </tr>
+            </tbody>
+        </table>
+    </div>
+    <br>
+
+    <hr>
+
+    <h2>✅ Notes for API Consumers</h2>
+
+    <ul>
+        <li>Always include the JWT token for protected routes.</li>
+        <li>Invalid or missing tokens will return <b>401 Unauthorized</b>.</li>
+        <li>Use meaningful HTTP status codes for frontend error handling.</li>
+    </ul>
+
+</section>
