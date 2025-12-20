@@ -4,7 +4,7 @@ import { dirname } from "path";
 import path from "path";
 import { fileURLToPath } from "url";
 import session from "express-session";
-// import passport from "passport";
+import cors from "cors";
 import "dotenv/config";
 import helmet from "helmet";
 import flash from "connect-flash";
@@ -26,6 +26,8 @@ const port = process.env.SERVER_PORT || 3000;
 const __dirname = dirname(fileURLToPath(import.meta.url));
 
 app.use(flash());
+
+app.use(cors()); // allow all origins
 
 app.use(
   helmet({
