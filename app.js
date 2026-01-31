@@ -27,7 +27,7 @@ const __dirname = dirname(fileURLToPath(import.meta.url));
 
 app.use(flash());
 
-app.use(cors()); // allow all origins
+app.use(cors({ origin: "*" })); // allow all origins
 
 app.use(
   helmet({
