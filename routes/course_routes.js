@@ -1,31 +1,36 @@
 import express from "express";
 import {
-  createCourse,
   getAllCourses,
   getCourseById,
+  createCourse,
   updateCourse,
   deleteCourse,
+  togglePublishCourse,
+  getInstructorCourses,
 } from "../controllers/course_controllers.js";
 import { protect, authorizeRoles } from "../middlewares/auth_middlewares.js";
 
 const router = express.Router();
 
-
-
 /* ===================== PUBLIC ===================== */
 
-// Get all courses
+// Get all published courses
 router.get("/", getAllCourses);
 
-// Get course by ID
+// Get published course by ID
 router.get("/:courseId", getCourseById);
 
 /* ===================== INSTRUCTOR / ADMIN ===================== */
 
 // Create course
-router.post("/", protect, authorizeRoles("instructor", "admin"), createCourse);
+router.post(
+  "/",
+  protect,
+  authorizeRoles("instructor", "admin"),
+  createCourse
+);
 
-// Update course (owner or admin)
+// Update course
 router.put(
   "/:courseId",
   protect,
@@ -33,12 +38,28 @@ router.put(
   updateCourse
 );
 
-// Delete course (owner or admin)
+// Delete course
 router.delete(
   "/:courseId",
   protect,
   authorizeRoles("instructor", "admin"),
   deleteCourse
+);
+
+// Toggle publish / unpublish
+router.patch(
+  "/:courseId/publish",
+  protect,
+  authorizeRoles("instructor", "admin"),
+  togglePublishCourse
+);
+
+// Get instructor's own courses
+router.get(
+  "/instructor/me",
+  protect,
+  authorizeRoles("instructor", "admin"),
+  getInstructorCourses
 );
 
 export default router;

@@ -1,21 +1,48 @@
+CREATE EXTENSION IF NOT EXISTS pgcrypto;
+CREATE EXTENSION IF NOT EXISTS "uuid-ossp";
+
+
+CREATE OR REPLACE FUNCTION update_updated_at()
+RETURNS TRIGGER AS $$
+BEGIN
+  IF NEW IS DISTINCT FROM OLD THEN
+    NEW.updated_at = NOW();
+  END IF;
+  RETURN NEW;
+END;
+
+$$ LANGUAGE plpgsql;
+
 -- ====================== ENUM TYPES ======================
 
 CREATE TYPE user_role AS ENUM ('student', 'instructor', 'admin');
 CREATE TYPE enrollment_status AS ENUM ('active', 'completed', 'dropped');
 CREATE TYPE course_level AS ENUM ('Beginner', 'Intermediate', 'Advanced');
 
+-- Payment status (for platform payments)
+CREATE TYPE payment_status AS ENUM (
+  'pending',
+  'paid',
+  'failed'
+);
+
 
 -- ====================== USERS ======================
 
-CREATE TABLE IF NOT EXISTS users (
-    id BIGSERIAL PRIMARY KEY,
+CREATE TABLE users (
+    id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
     name VARCHAR(100) NOT NULL,
     email VARCHAR(150) NOT NULL UNIQUE,
     password_hash TEXT NOT NULL,
     role user_role NOT NULL DEFAULT 'student',
-    created_at TIMESTAMPTZ NOT NULL DEFAULT NOW(),
-    updated_at TIMESTAMPTZ NOT NULL DEFAULT NOW()
+    created_at TIMESTAMPTZ DEFAULT NOW(),
+    updated_at TIMESTAMPTZ DEFAULT NOW()
 );
+
+CREATE TRIGGER trg_users_updated_at
+BEFORE UPDATE ON users
+FOR EACH ROW
+EXECUTE FUNCTION update_updated_at();
 
 -- quick search index by email for login lookups
 CREATE INDEX IF NOT EXISTS idx_users_email ON users(email);
@@ -23,47 +50,85 @@ CREATE INDEX IF NOT EXISTS idx_users_email ON users(email);
 
 -- ====================== INSTRUCTORS ======================
 
-CREATE TABLE IF NOT EXISTS instructors (
-    id  BIGSERIAL PRIMARY KEY,
-    user_id BIGINT NOT NULL UNIQUE,
+CREATE TABLE instructors (
+    id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+    user_id UUID UNIQUE NOT NULL REFERENCES users(id) ON DELETE CASCADE,
     bio TEXT,
     expertise VARCHAR(200),
-    experience_years INT CHECK (experience_years IS NULL OR experience_years >= 0),
+    experience_years INT CHECK (experience_years >= 0),
     profile_image_url TEXT,
-    created_at TIMESTAMPTZ NOT NULL DEFAULT NOW(),
-    updated_at TIMESTAMPTZ NOT NULL DEFAULT NOW(),
-
-    CONSTRAINT fk_instructors_user
-        FOREIGN KEY (user_id) REFERENCES users(id)
-        ON DELETE CASCADE
+    created_at TIMESTAMPTZ DEFAULT NOW(),
+    updated_at TIMESTAMPTZ DEFAULT NOW()
 );
+
+CREATE TRIGGER trg_instructors_updated_at
+BEFORE UPDATE ON instructors
+FOR EACH ROW
+EXECUTE FUNCTION update_updated_at();
 
 CREATE INDEX IF NOT EXISTS idx_instructors_user_id ON instructors(user_id);
 
 
 -- ====================== COURSES ======================
 
-CREATE TABLE IF NOT EXISTS courses (
-    id BIGSERIAL PRIMARY KEY,
+CREATE TABLE courses (
+    id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
     title VARCHAR(200) NOT NULL,
     description TEXT,
-    category VARCHAR(100),              -- Frontend, Backend, AI & ML, etc.
-    level course_level NOT NULL,     -- Beginner / Intermediate / Advanced
-    duration VARCHAR(50),               -- e.g. "6 weeks"
-    price NUMERIC(10,2) NOT NULL,    -- e.g. 4999.00
+    category VARCHAR(100),
+    level course_level NOT NULL,
+    duration VARCHAR(50),
+    total_lessons INT NOT NULL DEFAULT 0,
+    total_assignments INT NOT NULL DEFAULT 0,
+    price NUMERIC(10,2) NOT NULL,
     discount_percent INT DEFAULT 0 CHECK (discount_percent BETWEEN 0 AND 100),
     rating NUMERIC(2,1) DEFAULT 0.0 CHECK (rating BETWEEN 0 AND 5),
-    banner_url TEXT,                      -- image / thumbnail URL
-    instructor_id BIGINT NOT NULL,            -- FK → instructors.id
-    created_at TIMESTAMPTZ NOT NULL DEFAULT NOW(),
-    updated_at TIMESTAMPTZ NOT NULL DEFAULT NOW(),
-
-    CONSTRAINT fk_courses_instructor
-        FOREIGN KEY (instructor_id)
-        REFERENCES instructors(id)
-        ON DELETE CASCADE
+    banner_url TEXT,
+    instructor_id UUID NOT NULL REFERENCES instructors(id) ON DELETE CASCADE,
+    published BOOLEAN NOT NULL DEFAULT FALSE,
+    created_at TIMESTAMPTZ DEFAULT NOW(),
+    updated_at TIMESTAMPTZ DEFAULT NOW()
 );
 
+CREATE TRIGGER trg_courses_updated_at
+BEFORE UPDATE ON courses
+FOR EACH ROW
+EXECUTE FUNCTION update_updated_at();
+
+
+CREATE OR REPLACE FUNCTION update_course_lesson_count()
+RETURNS TRIGGER AS $$
+BEGIN
+  UPDATE courses
+  SET total_lessons = total_lessons + 1
+  WHERE id = (
+    SELECT course_id FROM course_modules WHERE id = NEW.module_id
+  );
+  RETURN NEW;
+END;
+$$ LANGUAGE plpgsql;
+
+
+CREATE TRIGGER trg_increment_lesson_count
+AFTER INSERT ON lessons
+FOR EACH ROW
+EXECUTE FUNCTION update_course_lesson_count();
+
+
+CREATE OR REPLACE FUNCTION update_course_assignment_count()
+RETURNS TRIGGER AS $$
+BEGIN
+  UPDATE courses
+  SET total_assignments = total_assignments + 1
+  WHERE id = NEW.course_id;
+  RETURN NEW;
+END;
+$$ LANGUAGE plpgsql;
+
+CREATE TRIGGER trg_increment_assignment_count
+AFTER INSERT ON assignments
+FOR EACH ROW
+EXECUTE FUNCTION update_course_assignment_count();
 
 
 -- Optional: quick search index by category
@@ -71,54 +136,94 @@ CREATE INDEX IF NOT EXISTS idx_courses_category ON courses(category);
 CREATE INDEX IF NOT EXISTS idx_courses_instructor_id ON courses(instructor_id);
 
 
--- ====================== LESSONS ======================
+-- ====================== COURSE DETAILS ======================
 
-CREATE TABLE IF NOT EXISTS lessons (
-    id  BIGSERIAL PRIMARY KEY,
-    course_id BIGINT NOT NULL,
-    title VARCHAR(200) NOT NULL,
-    content_url TEXT,             -- could be video URL, PDF URL, etc.
-    order_index INT NOT NULL CHECK (order_index > 0),     -- lesson order in the course
-    created_at TIMESTAMPTZ NOT NULL DEFAULT NOW(),
-    updated_at TIMESTAMPTZ NOT NULL DEFAULT NOW(),
+CREATE TABLE course_details (
+    id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+    course_id UUID NOT NULL REFERENCES courses(id) ON DELETE CASCADE,
 
-    CONSTRAINT fk_lessons_course
-        FOREIGN KEY (course_id) REFERENCES courses(id)
-        ON DELETE CASCADE
+    overview TEXT,
+    prerequisites TEXT,
+    learning_outcomes TEXT,
+    target_audience TEXT,
+    syllabus JSONB,   -- structured modules + topics
+
+    created_at TIMESTAMPTZ DEFAULT NOW(),
+    updated_at TIMESTAMPTZ DEFAULT NOW()
 );
 
--- Make sure each lesson order is unique within a course
-CREATE UNIQUE INDEX IF NOT EXISTS uniq_lessons_course_order
-ON lessons (course_id, order_index);
+CREATE TRIGGER trg_course_details_updated_at
+BEFORE UPDATE ON course_details
+FOR EACH ROW
+EXECUTE FUNCTION update_updated_at();
 
-CREATE INDEX IF NOT EXISTS idx_lessons_course_id ON lessons(course_id);
+CREATE UNIQUE INDEX uniq_course_details_course
+ON course_details(course_id);
+
+
+-- ====================== COURSE MODULES ======================
+
+CREATE TABLE course_modules (
+    id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+    course_id UUID NOT NULL REFERENCES courses(id) ON DELETE CASCADE,
+
+    title VARCHAR(200) NOT NULL,     -- "About HTML", "About CSS"
+    order_index INT NOT NULL CHECK (order_index > 0),
+
+    created_at TIMESTAMPTZ DEFAULT NOW(),
+    updated_at TIMESTAMPTZ DEFAULT NOW(),
+
+    UNIQUE (course_id, order_index)
+);
+
+CREATE TRIGGER trg_course_modules_updated_at
+BEFORE UPDATE ON course_modules
+FOR EACH ROW
+EXECUTE FUNCTION update_updated_at();
+
+
+-- ====================== LESSONS ======================
+
+CREATE TABLE lessons (
+    id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+    module_id UUID NOT NULL REFERENCES course_modules(id) ON DELETE CASCADE,
+
+    title VARCHAR(200) NOT NULL,
+    content_url TEXT,
+    content_type VARCHAR(50),
+    order_index INT NOT NULL CHECK (order_index > 0),
+
+    is_preview BOOLEAN DEFAULT FALSE,
+    duration_minutes INT CHECK (duration_minutes >= 0),
+
+    created_at TIMESTAMPTZ DEFAULT NOW(),
+    updated_at TIMESTAMPTZ DEFAULT NOW(),
+
+    UNIQUE (module_id, order_index)
+);
+
+CREATE TRIGGER trg_lessons_updated_at
+BEFORE UPDATE ON lessons
+FOR EACH ROW
+EXECUTE FUNCTION update_updated_at();
+
+CREATE INDEX idx_lessons_module_id ON lessons(module_id);
 
 
 -- ====================== ENROLLMENTS ======================
 
-CREATE TABLE IF NOT EXISTS enrollments (
-    id BIGSERIAL PRIMARY KEY,
-    student_id BIGINT NOT NULL,  -- references users.id (role = 'student')
-    course_id BIGINT NOT NULL,  -- references courses.id
-    enrolled_at TIMESTAMPTZ NOT NULL DEFAULT NOW(),
-    progress NUMERIC(5,2) NOT NULL DEFAULT 0.00, -- 0.00 - 100.00
-    status enrollment_status NOT NULL DEFAULT 'active',
-
-    CONSTRAINT fk_enrollments_student
-        FOREIGN KEY (student_id) REFERENCES users(id)
-        ON DELETE CASCADE,
-
-    CONSTRAINT fk_enrollments_course
-        FOREIGN KEY (course_id) REFERENCES courses(id)
-        ON DELETE CASCADE,
-
-    CONSTRAINT chk_enrollments_progress
-        CHECK (progress >= 0.00 AND progress <= 100.00)
+CREATE TABLE enrollments (
+    id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+    student_id UUID NOT NULL REFERENCES users(id) ON DELETE CASCADE,
+    course_id UUID NOT NULL REFERENCES courses(id) ON DELETE CASCADE,
+    enrolled_at TIMESTAMPTZ DEFAULT NOW(),
+    progress NUMERIC(5,2) DEFAULT 0.00 CHECK (progress BETWEEN 0 AND 100),
+    status enrollment_status DEFAULT 'active'
 );
 
--- A student can be enrolled in the same course only once
-CREATE UNIQUE INDEX IF NOT EXISTS uniq_enrollment_student_course
-ON enrollments (student_id, course_id);
+CREATE UNIQUE INDEX uniq_enrollment_student_course
+ON enrollments(student_id, course_id);
+
 
 CREATE INDEX IF NOT EXISTS idx_enrollments_student_id ON enrollments(student_id);
 CREATE INDEX IF NOT EXISTS idx_enrollments_course_id ON enrollments(course_id);
@@ -126,71 +231,91 @@ CREATE INDEX IF NOT EXISTS idx_enrollments_course_id ON enrollments(course_id);
 
 -- ====================== PROGRESS TRACKING ======================
 
-CREATE TABLE IF NOT EXISTS progress_tracking (
-    id BIGSERIAL PRIMARY KEY,
-    enrollment_id BIGINT NOT NULL,
-    lesson_id BIGINT NOT NULL,
+CREATE TABLE progress_tracking (
+    id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+    enrollment_id UUID NOT NULL REFERENCES enrollments(id) ON DELETE CASCADE,
+    lesson_id UUID NOT NULL REFERENCES lessons(id) ON DELETE CASCADE,
+
     completed BOOLEAN NOT NULL DEFAULT FALSE,
     completed_at TIMESTAMPTZ,
 
-    CONSTRAINT fk_progress_enrollment
-        FOREIGN KEY (enrollment_id) REFERENCES enrollments(id)
-        ON DELETE CASCADE,
-
-    CONSTRAINT fk_progress_lesson
-        FOREIGN KEY (lesson_id) REFERENCES lessons(id)
-        ON DELETE CASCADE
+    UNIQUE (enrollment_id, lesson_id)
 );
 
--- One progress record per lesson per enrollment
-CREATE UNIQUE INDEX IF NOT EXISTS uniq_progress_enrollment_lesson
-ON progress_tracking (enrollment_id, lesson_id);
-
-CREATE INDEX IF NOT EXISTS idx_progress_enrollment_id ON progress_tracking(enrollment_id);
-CREATE INDEX IF NOT EXISTS idx_progress_lesson_id ON progress_tracking(lesson_id);
+CREATE INDEX idx_progress_enrollment_id ON progress_tracking(enrollment_id);
+CREATE INDEX idx_progress_lesson_id ON progress_tracking(lesson_id);
 
 
 -- ====================== ASSIGNMENTS (Optional but Professional LMS Feature) ======================
 
-CREATE TABLE IF NOT EXISTS assignments (
-    id BIGSERIAL PRIMARY KEY,
-    course_id BIGINT NOT NULL,
+CREATE TABLE assignments (
+    id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+    course_id UUID NOT NULL REFERENCES courses(id) ON DELETE CASCADE,
+
     title VARCHAR(200) NOT NULL,
     description TEXT,
     due_date TIMESTAMPTZ,
-    created_at TIMESTAMPTZ NOT NULL DEFAULT NOW(),
-    updated_at TIMESTAMPTZ NOT NULL DEFAULT NOW(),
 
-    CONSTRAINT fk_assignments_course
-        FOREIGN KEY (course_id) REFERENCES courses(id)
-        ON DELETE CASCADE
+    created_at TIMESTAMPTZ DEFAULT NOW(),
+    updated_at TIMESTAMPTZ DEFAULT NOW()
 );
 
-CREATE INDEX IF NOT EXISTS idx_assignments_course_id ON assignments(course_id);
+CREATE TRIGGER trg_assignments_updated_at
+BEFORE UPDATE ON assignments
+FOR EACH ROW
+EXECUTE FUNCTION update_updated_at();
+
+CREATE INDEX idx_assignments_course_id ON assignments(course_id);
 
 
 -- ====================== SUBMISSIONS (Optional) ======================
 
-CREATE TABLE IF NOT EXISTS submissions (
-    id BIGSERIAL PRIMARY KEY,
-    assignment_id BIGINT NOT NULL,
-    student_id BIGINT NOT NULL, -- references users.id
+CREATE TABLE submissions (
+    id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+    assignment_id UUID NOT NULL REFERENCES assignments(id) ON DELETE CASCADE,
+    student_id UUID NOT NULL REFERENCES users(id) ON DELETE CASCADE,
+
     file_url TEXT,
-    submitted_at TIMESTAMPTZ NOT NULL DEFAULT NOW(),
     grade NUMERIC(5,2),
     feedback TEXT,
 
-    CONSTRAINT fk_submissions_assignment
-        FOREIGN KEY (assignment_id) REFERENCES assignments(id)
-        ON DELETE CASCADE,
+    submitted_at TIMESTAMPTZ DEFAULT NOW(),
 
-    CONSTRAINT fk_submissions_student
-        FOREIGN KEY (student_id) REFERENCES users(id)
-        ON DELETE CASCADE
+    UNIQUE (assignment_id, student_id)
 );
 
--- A student can submit once per assignment (you can relax this if you want multiple attempts)
-CREATE UNIQUE INDEX IF NOT EXISTS uniq_submissions_assignment_student
-ON submissions (assignment_id, student_id);
+CREATE INDEX idx_submissions_student_id ON submissions(student_id);
 
-CREATE INDEX IF NOT EXISTS idx_submissions_student_id ON submissions(student_id);
+
+-- ================= PAYMENTS =================
+
+CREATE TABLE payments (
+    id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+
+    enrollment_id UUID UNIQUE NOT NULL
+        REFERENCES enrollments(id) ON DELETE CASCADE,
+
+    user_id UUID NOT NULL
+        REFERENCES users(id) ON DELETE CASCADE,
+
+    course_id UUID NOT NULL
+        REFERENCES courses(id) ON DELETE CASCADE,
+
+    payment_method VARCHAR(50) NOT NULL,   -- razorpay / upi / card
+    amount NUMERIC(10,2) NOT NULL,
+
+    payment_status payment_status NOT NULL DEFAULT 'pending',
+
+    -- Razorpay
+    razorpay_order_id VARCHAR(100) UNIQUE,
+    razorpay_payment_id VARCHAR(100) UNIQUE,
+    razorpay_signature VARCHAR(255),
+
+    -- Platform reference
+    transaction_id VARCHAR(100) UNIQUE NOT NULL,
+
+    created_at TIMESTAMPTZ DEFAULT NOW()
+);
+
+CREATE INDEX idx_payments_user_id ON payments(user_id);
+CREATE INDEX idx_payments_course_id ON payments(course_id);

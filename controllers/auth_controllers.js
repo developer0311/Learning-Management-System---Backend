@@ -3,29 +3,38 @@ import jwt from "jsonwebtoken";
 import db from "../db.js";
 
 
+const isStrongPassword = (password) => {
+  // Minimum 8 chars, 1 uppercase, 1 lowercase, 1 number, 1 special char
+  const strongPasswordRegex =
+    /^(?=.*[a-z])(?=.*[A-Z])(?=.*\d)(?=.*[@$!%*?&#^()_+=\-{}[\]|\\:;"'<>,./]).{8,}$/;
+
+  return strongPasswordRegex.test(password);
+};
+
+
 // ===================== POST REGISTER =====================
 
 export const register = async (req, res) => {
   try {
-    const { name, email, password, role } = req.body;
+    const { name, email, password } = req.body;
 
     // -------- Validation --------
     if (!name || !email || !password) {
       return res.status(400).json({
         success: false,
+        error: "VALIDATION_ERROR",
         message: "Name, email, and password are required",
       });
     }
 
-    if (password.length < 6) {
+    if (!isStrongPassword(password)) {
       return res.status(400).json({
         success: false,
-        message: "Password must be at least 6 characters long",
+        error: "WEAK_PASSWORD",
+        message:
+          "Password must be at least 8 characters long and include uppercase, lowercase, number, and special character",
       });
     }
-
-    const allowedRoles = ["student", "instructor", "admin"];
-    const userRole = allowedRoles.includes(role) ? role : "student";
 
     // -------- Check existing user --------
     const existingUser = await db.query(
@@ -36,6 +45,7 @@ export const register = async (req, res) => {
     if (existingUser.rows.length > 0) {
       return res.status(409).json({
         success: false,
+        error: "EMAIL_EXISTS",
         message: "This email is already registered",
       });
     }
@@ -43,25 +53,20 @@ export const register = async (req, res) => {
     // -------- Hash password --------
     const passwordHash = await bcrypt.hash(password, 10);
 
+    // 🔒 FORCE ROLE = STUDENT
+    const role = "student";
+
     // -------- Insert user --------
     const userResult = await db.query(
       `INSERT INTO users (name, email, password_hash, role)
        VALUES ($1, $2, $3, $4)
        RETURNING id, name, email, role, created_at`,
-      [name, email, passwordHash, userRole]
+      [name, email, passwordHash, role]
     );
 
     const user = userResult.rows[0];
 
-    // -------- If instructor, create instructor profile --------
-    if (user.role === "instructor") {
-      await db.query(
-        "INSERT INTO instructors (user_id) VALUES ($1)",
-        [user.id]
-      );
-    }
-
-    // -------- Generate JWT (7 days) --------
+    // -------- JWT --------
     const token = jwt.sign(
       { userId: user.id, role: user.role },
       process.env.JWT_SECRET,
@@ -80,13 +85,15 @@ export const register = async (req, res) => {
 
     return res.status(500).json({
       success: false,
-      message: "Server error during registration",
+      error: "INTERNAL_SERVER_ERROR",
+      message: "Something went wrong during registration",
     });
   }
 };
 
 
-// ===================== POST LOGIN =====================
+
+// ===================== POST LOGIN ===================== 
 
 export const login = async (req, res) => {
   try {
@@ -96,6 +103,7 @@ export const login = async (req, res) => {
     if (!email || !password) {
       return res.status(400).json({
         success: false,
+        error: "VALIDATION_ERROR",
         message: "Email and password are required",
       });
     }
@@ -111,7 +119,8 @@ export const login = async (req, res) => {
     if (result.rows.length === 0) {
       return res.status(401).json({
         success: false,
-        message: "Email not registered",
+        error: "INVALID_CREDENTIALS",
+        message: "Invalid email or password",
       });
     }
 
@@ -123,11 +132,12 @@ export const login = async (req, res) => {
     if (!isMatch) {
       return res.status(401).json({
         success: false,
-        message: "Incorrect password",
+        error: "INVALID_CREDENTIALS",
+        message: "Invalid email or password",
       });
     }
 
-    // -------- JWT (7 days) --------
+    // -------- JWT --------
     const token = jwt.sign(
       { userId: user.id, role: user.role },
       process.env.JWT_SECRET,
@@ -148,8 +158,10 @@ export const login = async (req, res) => {
 
     return res.status(500).json({
       success: false,
-      message: "Server error during login",
+      error: "INTERNAL_SERVER_ERROR",
+      message: "Something went wrong during login",
     });
   }
 };
+
 
