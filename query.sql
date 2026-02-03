@@ -81,6 +81,7 @@ CREATE TABLE courses (
     total_lessons INT NOT NULL DEFAULT 0,
     total_assignments INT NOT NULL DEFAULT 0,
     price NUMERIC(10,2) NOT NULL,
+    COLUMN actual_price NUMERIC(10,2),
     discount_percent INT DEFAULT 0 CHECK (discount_percent BETWEEN 0 AND 100),
     rating NUMERIC(2,1) DEFAULT 0.0 CHECK (rating BETWEEN 0 AND 5),
     banner_url TEXT,
@@ -124,6 +125,35 @@ BEGIN
   RETURN NEW;
 END;
 $$ LANGUAGE plpgsql;
+
+
+CREATE OR REPLACE FUNCTION calculate_actual_price(
+    base_price NUMERIC,
+    discount INT
+)
+RETURNS NUMERIC AS $$
+BEGIN
+    RETURN ROUND(
+        base_price - (base_price * COALESCE(discount, 0) / 100),
+        2
+    );
+END;
+$$ LANGUAGE plpgsql IMMUTABLE;
+
+CREATE OR REPLACE FUNCTION update_actual_price()
+RETURNS TRIGGER AS $$
+BEGIN
+    NEW.actual_price :=
+        calculate_actual_price(NEW.price, NEW.discount_percent);
+    RETURN NEW;
+END;
+$$ LANGUAGE plpgsql;
+
+CREATE TRIGGER trg_courses_actual_price
+BEFORE INSERT OR UPDATE OF price, discount_percent
+ON courses
+FOR EACH ROW
+EXECUTE FUNCTION update_actual_price();
 
 CREATE TRIGGER trg_increment_assignment_count
 AFTER INSERT ON assignments

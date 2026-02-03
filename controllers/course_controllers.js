@@ -79,6 +79,7 @@ export const getCourseById = async (req, res) => {
         c.total_assignments,
         c.price,
         c.discount_percent,
+        c.actual_price,
         c.rating,
         c.banner_url,
         c.created_at,
