@@ -131,14 +131,18 @@ CREATE OR REPLACE FUNCTION calculate_actual_price(
     base_price NUMERIC,
     discount INT
 )
-RETURNS NUMERIC AS $$
+RETURNS NUMERIC(10,2) AS $$
+DECLARE
+    discounted_price NUMERIC;
 BEGIN
-    RETURN ROUND(
-        base_price - (base_price * COALESCE(discount, 0) / 100),
-        2
-    );
+    discounted_price :=
+        base_price - (base_price * COALESCE(discount, 0) / 100);
+
+    -- round to nearest integer, then force .00
+    RETURN ROUND(discounted_price, 0);
 END;
 $$ LANGUAGE plpgsql IMMUTABLE;
+
 
 CREATE OR REPLACE FUNCTION update_actual_price()
 RETURNS TRIGGER AS $$
